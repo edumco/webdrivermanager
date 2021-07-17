@@ -29,6 +29,9 @@ import java.util.Optional;
 
 import javax.xml.namespace.NamespaceContext;
 
+import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.chrome.ChromeOptions;
+
 import io.github.bonigarcia.wdm.WebDriverManager;
 import io.github.bonigarcia.wdm.config.DriverManagerType;
 import io.github.bonigarcia.wdm.config.OperatingSystem;
@@ -36,7 +39,7 @@ import io.github.bonigarcia.wdm.config.OperatingSystem;
 /**
  * Manager for Chrome.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 1.0.0
  */
 public class ChromeDriverManager extends WebDriverManager {
@@ -151,6 +154,24 @@ public class ChromeDriverManager extends WebDriverManager {
             }
         }
         return optionalUrl;
+    }
+
+    @Override
+    protected Capabilities getCapabilities() {
+        ChromeOptions options = new ChromeOptions();
+        if (!androidEnabled) {
+            options.addArguments("--no-sandbox");
+            options.addArguments("--disable-gpu");
+            options.addArguments("--disable-dev-shm-usage");
+        }
+        return options;
+    }
+
+    @Override
+    public WebDriverManager browserInDockerAndroid() {
+        this.dockerEnabled = true;
+        this.androidEnabled = true;
+        return instanceMap.get(getDriverManagerType());
     }
 
     public WebDriverManager exportParameter(String exportParameter) {

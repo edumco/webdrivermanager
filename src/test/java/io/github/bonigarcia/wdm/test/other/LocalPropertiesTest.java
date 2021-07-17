@@ -16,26 +16,26 @@
  */
 package io.github.bonigarcia.wdm.test.other;
 
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 
 /**
  * Tests with custom configuration for versions and commands properties.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 4.4.1
  */
-public class LocalPropertiesTest {
+class LocalPropertiesTest {
 
     @Test
-    public void testCustomUrl() throws MalformedURLException {
+    void testCustomUrl() throws MalformedURLException {
         File dot = new File(".");
         URL versionsPropertiesUrl = new URL("file://" + dot.getAbsolutePath()
                 + "/src/main/resources/versions.properties");
@@ -50,7 +50,7 @@ public class LocalPropertiesTest {
     }
 
     @Test
-    public void testLocalFirst() {
+    void testLocalFirst() {
         WebDriverManager.chromedriver().clearResolutionCache()
                 .avoidReadReleaseFromRepository()
                 .useLocalCommandsPropertiesFirst()
@@ -63,7 +63,7 @@ public class LocalPropertiesTest {
         String driverPath = WebDriverManager.chromedriver()
                 .getDownloadedDriverPath();
         File driver = new File(driverPath);
-        assertTrue(driver.exists());
+        assertThat(driver).exists();
     }
 
 }

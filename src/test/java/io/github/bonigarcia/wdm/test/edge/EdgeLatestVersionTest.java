@@ -18,9 +18,7 @@ package io.github.bonigarcia.wdm.test.edge;
 
 import static java.lang.invoke.MethodHandles.lookup;
 import static java.nio.charset.StandardCharsets.UTF_16;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.net.URL;
@@ -28,7 +26,7 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -39,15 +37,15 @@ import io.github.bonigarcia.wdm.versions.VersionDetector;
 /**
  * Test asserting latest version of Edge in repository.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 4.0.1
  */
-public class EdgeLatestVersionTest {
+class EdgeLatestVersionTest {
 
     final Logger log = getLogger(lookup().lookupClass());
 
     @Test
-    public void edgeVersionTest() throws Exception {
+    void edgeVersionTest() throws Exception {
         Config config = new Config();
         HttpClient httpClient = new HttpClient(config);
         VersionDetector versionDetector = new VersionDetector(config,
@@ -63,7 +61,7 @@ public class EdgeLatestVersionTest {
                 .getDriverVersionFromRepository(driverVersion, driverUrl,
                         versionCharset, driverName, versionLabel, versionLabel,
                         osLabel);
-        assertTrue(driverVersionFromRepository.isPresent());
+        assertThat(driverVersionFromRepository).isPresent();
         String edgeVersion = driverVersionFromRepository.get();
         log.debug("driverVersionFromRepository {}", edgeVersion);
 
@@ -75,7 +73,7 @@ public class EdgeLatestVersionTest {
             log.warn("{}", String.format(
                     "Stable version (%s) is not in the URL list", edgeVersion));
             edgedriver.win().forceDownload().avoidBrowserDetection().setup();
-            assertThat(edgedriver.getDownloadedDriverVersion(), notNullValue());
+            assertThat(edgedriver.getDownloadedDriverVersion()).isNotNull();
         }
     }
 

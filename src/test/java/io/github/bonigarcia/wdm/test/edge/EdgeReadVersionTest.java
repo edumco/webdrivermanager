@@ -17,14 +17,13 @@
 package io.github.bonigarcia.wdm.test.edge;
 
 import static java.lang.invoke.MethodHandles.lookup;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -32,15 +31,15 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 /**
  * Test asserting Edge driver versions.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 3.5.0
  */
-public class EdgeReadVersionTest {
+class EdgeReadVersionTest {
 
     final Logger log = getLogger(lookup().lookupClass());
 
     @Test
-    public void edgeVersionsTest() {
+    void edgeVersionsTest() {
         String[] expectedVersions = { "75.0.139.20", "76.0.183.0", "77.0.237.0",
                 "78.0.277.0", "79.0.313.0", "80.0.361.111", "81.0.409.0",
                 "82.0.459.1" };
@@ -51,7 +50,7 @@ public class EdgeReadVersionTest {
                 Arrays.asList(expectedVersions));
         log.debug("Edge versions read from the repository: {}", driverVersions);
 
-        assertThat(driverVersions, hasItems(expectedVersions));
+        assertThat(driverVersions).contains(expectedVersions);
     }
 
 }

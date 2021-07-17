@@ -21,10 +21,7 @@ import static io.github.bonigarcia.wdm.WebDriverManager.edgedriver;
 import static io.github.bonigarcia.wdm.WebDriverManager.firefoxdriver;
 import static io.github.bonigarcia.wdm.WebDriverManager.iedriver;
 import static io.github.bonigarcia.wdm.WebDriverManager.operadriver;
-import static io.github.bonigarcia.wdm.WebDriverManager.phantomjs;
-import static io.github.bonigarcia.wdm.WebDriverManager.seleniumServerStandalone;
 import static java.lang.invoke.MethodHandles.lookup;
-import static java.util.Collections.singletonList;
 import static org.apache.commons.io.FileUtils.openInputStream;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -45,7 +42,7 @@ import io.javalin.http.Handler;
 /**
  * WebDriverManager server.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 3.0.0
  */
 public class WdmServer {
@@ -61,8 +58,6 @@ public class WdmServer {
         app.get("/edgedriver", handler);
         app.get("/iedriver", handler);
         app.get("/operadriver", handler);
-        app.get("/phantomjs", handler);
-        app.get("/selenium-server-standalone", handler);
 
         log.info("WebDriverManager server listening on port {}", port);
     }
@@ -97,12 +92,6 @@ public class WdmServer {
         case "operadriver":
             out = Optional.of(operadriver());
             break;
-        case "phantomjs":
-            out = Optional.of(phantomjs());
-            break;
-        case "selenium-server-standalone":
-            out = Optional.of(seleniumServerStandalone());
-            break;
         default:
             log.warn("Unknown option {}", requestPath);
             out = Optional.empty();
@@ -116,13 +105,6 @@ public class WdmServer {
         // Query string (for configuration parameters)
         Map<String, List<String>> queryParamMap = new TreeMap<>(
                 ctx.queryParamMap());
-
-        // Exception for Edge (for Windows by default)
-        if (driverManager.getDriverName().equals("msedgedriver")
-                && !queryParamMap.containsKey("os")) {
-            System.setProperty("wdm.os", "WIN");
-            queryParamMap.put("os", singletonList("WIN"));
-        }
 
         if (!queryParamMap.isEmpty()) {
             log.info("Server query string for configuration {}", queryParamMap);

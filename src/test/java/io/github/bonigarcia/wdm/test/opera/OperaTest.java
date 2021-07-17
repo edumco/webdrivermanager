@@ -16,41 +16,66 @@
  */
 package io.github.bonigarcia.wdm.test.opera;
 
-import static org.apache.commons.lang3.SystemUtils.IS_OS_MAC;
-import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
-import static org.junit.Assume.assumeTrue;
+import static java.lang.invoke.MethodHandles.lookup;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.slf4j.LoggerFactory.getLogger;
 
-import java.io.File;
+import java.nio.file.Path;
+import java.util.Optional;
 
-import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.opera.OperaDriver;
+import org.slf4j.Logger;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
-import io.github.bonigarcia.wdm.test.base.BrowserTestParent;
 
 /**
  * Test with Opera browser.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 1.0.0
  */
-public class OperaTest extends BrowserTestParent {
+class OperaTest {
 
-    @BeforeClass
-    public static void setupClass() {
-        WebDriverManager.operadriver().clearResolutionCache().setup();
+    final Logger log = getLogger(lookup().lookupClass());
+
+    WebDriver driver;
+
+    @BeforeAll
+    static void setupClass() {
+        Optional<Path> browserPath = WebDriverManager.operadriver()
+                .getBrowserPath();
+        assumeThat(browserPath).isPresent();
+
+        WebDriverManager.operadriver().setup();
     }
 
-    @Before
-    public void setupTest() {
-        String opera = IS_OS_WINDOWS
-                ? "C:\\Users\\boni\\AppData\\Local\\Programs\\Opera\\launcher.exe"
-                : IS_OS_MAC ? "/Applications/Opera.app/Contents/MacOS/Opera"
-                        : "/usr/bin/opera";
-        assumeTrue(new File(opera).exists());
-
+    @BeforeEach
+    void setupTest() {
         driver = new OperaDriver();
+    }
+
+    @AfterEach
+    void teardown() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
+
+    @Test
+    void test() {
+        String sutUrl = "https://github.com/bonigarcia/webdrivermanager";
+        driver.get(sutUrl);
+        String title = driver.getTitle();
+        log.debug("The title of {} is {}", sutUrl, title);
+
+        assertThat(title)
+                .contains("Automated driver management for Selenium WebDriver");
     }
 
 }

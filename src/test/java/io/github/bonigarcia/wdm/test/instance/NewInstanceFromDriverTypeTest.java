@@ -16,15 +16,14 @@
  */
 package io.github.bonigarcia.wdm.test.instance;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.reflect.Constructor;
 
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -35,21 +34,21 @@ import io.github.bonigarcia.wdm.config.DriverManagerType;
 /**
  * Test browser new instance creation from DriverManagerTypeTest.
  *
- * @author Elias Nogueira (elias.nogueira@gmail.com)
+ * @author Elias Nogueira and Boni Garcia
  * @since 3.8.1
  */
-public class NewInstanceFromDriverTypeTest {
+class NewInstanceFromDriverTypeTest {
 
     private static DriverManagerType driverManagerType = DriverManagerType.CHROME;
     private static WebDriver driver;
 
-    @BeforeClass
-    public static void setupClass() {
+    @BeforeAll
+    static void setupClass() {
         WebDriverManager.getInstance(driverManagerType).setup();
     }
 
-    @Before
-    public void setupTest() throws Exception {
+    @BeforeEach
+    void setupTest() throws Exception {
         Constructor<?> declaredConstructor = Class
                 .forName(driverManagerType.browserClass())
                 .getDeclaredConstructor(ChromeOptions.class);
@@ -59,12 +58,12 @@ public class NewInstanceFromDriverTypeTest {
     }
 
     @Test
-    public void createNewChromeInstanceFromDriverManagerType() {
-        assertThat(driver, instanceOf(ChromeDriver.class));
+    void createNewChromeInstanceFromDriverManagerType() {
+        assertThat(driver).isInstanceOf(ChromeDriver.class);
     }
 
-    @AfterClass
-    public static void tearDown() {
+    @AfterAll
+    static void tearDown() {
         driver.quit();
     }
 }

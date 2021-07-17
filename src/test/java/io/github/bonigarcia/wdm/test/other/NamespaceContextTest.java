@@ -16,12 +16,8 @@
  */
 package io.github.bonigarcia.wdm.test.other;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.URL;
@@ -29,7 +25,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.MutableCapabilities;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 import io.github.bonigarcia.wdm.config.DriverManagerType;
@@ -39,54 +37,53 @@ import io.github.bonigarcia.wdm.online.S3NamespaceContext;
 /**
  * Namespace tests.
  *
- * @author andruhon and Boni Garcia (boni.gg@gmail.com)
+ * @author andruhon and Boni Garcia
  * @since 4.1.0
  */
 
-public class NamespaceContextTest {
+class NamespaceContextTest {
 
-    public static final S3NamespaceContext S_3_BUCKET_LIST_NAMESPACE_CONTEXT = new S3NamespaceContext();
+    static final S3NamespaceContext S_3_BUCKET_LIST_NAMESPACE_CONTEXT = new S3NamespaceContext();
 
-    public static final String S3_URI = "http://doc.s3.amazonaws.com/2006-03-01";
+    static final String S3_URI = "http://doc.s3.amazonaws.com/2006-03-01";
 
     @Test
-    public void testS3BucketListNamespaceContextUrls() throws IOException {
+    void testS3BucketListNamespaceContextUrls() throws IOException {
         TestWebDriverManager testManager = new TestWebDriverManager();
         List<URL> urls = testManager.getDriverUrls();
-        assertThat(urls, is(not(empty())));
+        assertThat(urls).isNotEmpty();
     }
 
     @Test
-    public void testS3BucketListNamespaceContextPrefixes() {
-        assertThat(S_3_BUCKET_LIST_NAMESPACE_CONTEXT.getNamespaceURI("s3"),
-                equalTo(S3_URI));
-        assertThat(S_3_BUCKET_LIST_NAMESPACE_CONTEXT.getPrefix(S3_URI),
-                equalTo("s3"));
+    void testS3BucketListNamespaceContextPrefixes() {
+        assertThat(S_3_BUCKET_LIST_NAMESPACE_CONTEXT.getNamespaceURI("s3"))
+                .isEqualTo((S3_URI));
+        assertThat(S_3_BUCKET_LIST_NAMESPACE_CONTEXT.getPrefix(S3_URI))
+                .isEqualTo("s3");
         Iterator<String> prefixes = S_3_BUCKET_LIST_NAMESPACE_CONTEXT
                 .getPrefixes(S3_URI);
-        assertThat(prefixes.next(), equalTo("s3"));
-        assertThat(prefixes.hasNext(), equalTo(false));
+        assertThat(prefixes.next()).isEqualTo("s3");
+        assertThat(prefixes.hasNext()).isFalse();
     }
 
     @Test
-    public void testS3BucketListNamespaceContextInvalidPrefixes() {
+    void testS3BucketListNamespaceContextInvalidPrefixes() {
         try {
             S_3_BUCKET_LIST_NAMESPACE_CONTEXT.getNamespaceURI("xmlns");
             fail("IllegalArgumentException should be thrown");
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), equalTo("Unsupported prefix"));
+            assertThat(e.getMessage()).isEqualTo("Unsupported prefix");
         }
         try {
             S_3_BUCKET_LIST_NAMESPACE_CONTEXT
                     .getPrefix("http://www.w3.org/2000/xmlns/");
             fail("IllegalArgumentException should be thrown");
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), equalTo("Unsupported namespace URI"));
+            assertThat(e.getMessage()).isEqualTo("Unsupported namespace URI");
         }
-        assertThat(
-                S_3_BUCKET_LIST_NAMESPACE_CONTEXT
-                        .getPrefixes("http://www.w3.org/2000/xmlns/").hasNext(),
-                is(false));
+        assertThat(S_3_BUCKET_LIST_NAMESPACE_CONTEXT
+                .getPrefixes("http://www.w3.org/2000/xmlns/").hasNext())
+                        .isFalse();
     }
 
     private static final class TestWebDriverManager extends WebDriverManager {
@@ -151,6 +148,11 @@ public class NamespaceContextTest {
         @Override
         public DriverManagerType getDriverManagerType() {
             return null;
+        }
+
+        @Override
+        protected Capabilities getCapabilities() {
+            return new MutableCapabilities();
         }
 
     }

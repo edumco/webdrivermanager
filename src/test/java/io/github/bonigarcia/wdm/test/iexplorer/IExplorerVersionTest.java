@@ -18,7 +18,8 @@ package io.github.bonigarcia.wdm.test.iexplorer;
 
 import static io.github.bonigarcia.wdm.config.OperatingSystem.WIN;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.openqa.selenium.ie.InternetExplorerDriver;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -27,13 +28,14 @@ import io.github.bonigarcia.wdm.test.base.VersionTestParent;
 /**
  * Test asserting IEDriverServer versions.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 1.2.2
  */
-public class IExplorerVersionTest extends VersionTestParent {
+@Disabled
+class IExplorerVersionTest extends VersionTestParent {
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         os = WIN;
         browserManager = WebDriverManager
                 .getInstance(InternetExplorerDriver.class);

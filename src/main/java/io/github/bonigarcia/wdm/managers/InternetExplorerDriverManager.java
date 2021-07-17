@@ -21,18 +21,23 @@ import static java.util.Optional.empty;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
 import javax.xml.namespace.NamespaceContext;
 
+import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.ie.InternetExplorerOptions;
+
 import io.github.bonigarcia.wdm.WebDriverManager;
 import io.github.bonigarcia.wdm.config.DriverManagerType;
+import io.github.bonigarcia.wdm.config.WebDriverManagerException;
 
 /**
  * Manager for Internet Explorer.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 1.0.0
  */
 public class InternetExplorerDriverManager extends WebDriverManager {
@@ -107,6 +112,18 @@ public class InternetExplorerDriverManager extends WebDriverManager {
     @Override
     protected NamespaceContext getNamespaceContext() {
         return S3_NAMESPACE_CONTEXT;
+    }
+
+    @Override
+    public Optional<Path> getBrowserPath() {
+        throw new WebDriverManagerException("The browser path of "
+                + getDriverManagerType().getBrowserName()
+                + " cannot be found since it is a legacy browser and not maintained in the commands database");
+    }
+
+    @Override
+    protected Capabilities getCapabilities() {
+        return new InternetExplorerOptions();
     }
 
     public WebDriverManager exportParameter(String exportParameter) {

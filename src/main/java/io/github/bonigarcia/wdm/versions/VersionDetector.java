@@ -31,6 +31,9 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -49,7 +52,7 @@ import io.github.bonigarcia.wdm.online.HttpClient;
 /**
  * Driver and browser version detector.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 4.0.0
  */
 public class VersionDetector {
@@ -120,6 +123,61 @@ public class VersionDetector {
         return result;
     }
 
+    public Optional<Path> getBrowserPath(String browserName) {
+        log.debug("Detecting {} path using the commands database", browserName);
+
+        String pathStr = "";
+        Properties commandsProperties = getProperties(COMMANDS_PROPERTIES,
+                config.getCommandsPropertiesOnlineFirst());
+        List<String> commandsPerOs = getCommandsList(browserName,
+                commandsProperties);
+
+        for (String commandKey : commandsPerOs) {
+            String command = commandsProperties.get(commandKey).toString();
+            int lastSpaceIndex = command.lastIndexOf(" ");
+            String firstCommand = command;
+            if (lastSpaceIndex != -1) {
+                firstCommand = command.substring(0, lastSpaceIndex);
+            }
+
+            OperatingSystem operatingSystem = config.getOperatingSystem();
+            switch (operatingSystem) {
+            case WIN:
+                if (command.toLowerCase(ROOT).contains("wmic")) {
+                    File wmicLocation = findFileLocation("wmic.exe");
+                    String newCommand = command.replace("Version", "Caption");
+                    String captionOutput = runAndWait(wmicLocation,
+                            newCommand.split(" "));
+                    int iCaption = captionOutput.indexOf("=");
+                    if (iCaption != -1) {
+                        pathStr = captionOutput.substring(iCaption + 1);
+                    }
+                }
+                break;
+
+            case MAC:
+            case LINUX:
+            default:
+                if (firstCommand.contains("/")) {
+                    pathStr = firstCommand;
+                } else {
+                    String[] commandArray = new String[] { "bash", "-c",
+                            "type -p " + firstCommand };
+                    pathStr = runAndWait(commandArray);
+                }
+                break;
+            }
+            Path path = Paths.get(pathStr);
+            if (!isNullOrEmpty(pathStr) && Files.exists(path)) {
+                log.debug("The path of {} is {}", browserName, pathStr);
+                return Optional.of(path);
+            }
+        }
+
+        log.info("Browser {} is not available in the system", browserName);
+        return empty();
+    }
+
     public Optional<String> getBrowserVersionFromTheShell(String browserName) {
         Optional<String> browserVersionUsingProperties = empty();
         String browserVersionDetectionCommand = config
@@ -160,12 +218,8 @@ public class VersionDetector {
 
     protected Optional<String> getBrowserVersionUsingProperties(
             String browserName, Properties commandsProperties) {
-        OperatingSystem operatingSystem = config.getOperatingSystem();
-        List<String> commandsPerOs = Collections.list(commandsProperties.keys())
-                .stream().map(Object::toString)
-                .filter(s -> s.contains(browserName))
-                .filter(operatingSystem::matchOs).sorted()
-                .collect(Collectors.toList());
+        List<String> commandsPerOs = getCommandsList(browserName,
+                commandsProperties);
 
         for (String commandKey : commandsPerOs) {
             String command = commandsProperties.get(commandKey).toString();
@@ -178,6 +232,15 @@ public class VersionDetector {
         }
 
         return empty();
+    }
+
+    protected List<String> getCommandsList(String browserName,
+            Properties commandsProperties) {
+        OperatingSystem operatingSystem = config.getOperatingSystem();
+        return Collections.list(commandsProperties.keys()).stream()
+                .map(Object::toString).filter(s -> s.contains(browserName))
+                .filter(operatingSystem::matchOs).sorted()
+                .collect(Collectors.toList());
     }
 
     protected Optional<String> getBrowserVersionUsingCommand(String command) {

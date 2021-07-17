@@ -18,7 +18,7 @@ package io.github.bonigarcia.wdm.test.edge;
 
 import static io.github.bonigarcia.wdm.config.OperatingSystem.WIN;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.openqa.selenium.edge.EdgeDriver;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -27,18 +27,16 @@ import io.github.bonigarcia.wdm.test.base.VersionTestParent;
 /**
  * Test asserting Edge driver versions.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 1.3.0
  */
-public class EdgeVersionTest extends VersionTestParent {
+class EdgeVersionTest extends VersionTestParent {
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         browserManager = WebDriverManager.getInstance(EdgeDriver.class);
         os = WIN;
-        specificVersions = new String[] { "75.0.139.20", "76.0.183.0",
-                "77.0.237.0", "78.0.277.0", "79.0.313.0", "80.0.361.111",
-                "81.0.409.0", "82.0.459.1" };
+        specificVersions = new String[] { "75.0.139.20", "82.0.459.1" };
     }
 
 }

@@ -16,17 +16,16 @@
  */
 package io.github.bonigarcia.wdm.test.chrome;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assume.assumeTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 import java.io.File;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -36,48 +35,48 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 /**
  * Test with Google Chrome beta.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 4.2.1
  */
-public class ChromeBetaTest {
+class ChromeBetaTest {
 
     static String chromeBetaPath = "/usr/bin/google-chrome-beta";
     static File chromeBetaFile = new File(chromeBetaPath);
 
     WebDriver driver;
 
-    @BeforeClass
-    public static void setupClass() {
-        assumeTrue(chromeBetaFile.exists());
+    @BeforeAll
+    static void setupClass() {
+        assumeThat(chromeBetaFile).exists();
         WebDriverManager.chromedriver().clearResolutionCache()
                 .browserVersionDetectionCommand(chromeBetaPath + " --version")
                 .setup();
     }
 
-    @Before
-    public void setupTest() {
+    @BeforeEach
+    void setupTest() {
         ChromeOptions chromeOptions = new ChromeOptions();
         chromeOptions.setBinary(chromeBetaPath);
         driver = new ChromeDriver(chromeOptions);
     }
 
-    @After
-    public void teardown() {
+    @AfterEach
+    void teardown() {
         if (driver != null) {
             driver.quit();
         }
     }
 
-    @AfterClass
-    public static void teardownClass() {
+    @AfterAll
+    static void teardownClass() {
         WebDriverManager.chromedriver().clearResolutionCache();
     }
 
     @Test
-    public void test() {
+    void test() {
         driver.get("https://bonigarcia.github.io/selenium-jupiter/");
-        assertThat(driver.getTitle(),
-                containsString("JUnit 5 extension for Selenium"));
+        assertThat(driver.getTitle())
+                .contains("JUnit 5 extension for Selenium");
     }
 
 }

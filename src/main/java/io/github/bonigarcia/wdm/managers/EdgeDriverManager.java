@@ -34,15 +34,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
+import org.openqa.selenium.Capabilities;
+
 import io.github.bonigarcia.wdm.WebDriverManager;
 import io.github.bonigarcia.wdm.config.Architecture;
 import io.github.bonigarcia.wdm.config.DriverManagerType;
 import io.github.bonigarcia.wdm.config.OperatingSystem;
+import io.github.bonigarcia.wdm.webdriver.EdgeOptionsWithArguments;
 
 /**
  * Manager for Microsoft Edge.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 1.3.0
  */
 public class EdgeDriverManager extends WebDriverManager {
@@ -193,6 +196,15 @@ public class EdgeDriverManager extends WebDriverManager {
             }
         }
         return optionalUrl;
+    }
+
+    @Override
+    protected Capabilities getCapabilities() {
+        EdgeOptionsWithArguments options = new EdgeOptionsWithArguments();
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-gpu");
+        options.addArguments("--disable-dev-shm-usage");
+        return options;
     }
 
     public WebDriverManager exportParameter(String exportParameter) {

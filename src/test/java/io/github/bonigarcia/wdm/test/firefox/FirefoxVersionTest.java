@@ -16,8 +16,10 @@
  */
 package io.github.bonigarcia.wdm.test.firefox;
 
-import org.junit.Before;
-import org.junit.Ignore;
+import static org.junit.jupiter.api.condition.OS.LINUX;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.condition.EnabledOnOs;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 import io.github.bonigarcia.wdm.test.base.VersionTestParent;
@@ -25,14 +27,14 @@ import io.github.bonigarcia.wdm.test.base.VersionTestParent;
 /**
  * Test asserting Firefox versions.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 1.5.0
  */
-@Ignore
-public class FirefoxVersionTest extends VersionTestParent {
+@EnabledOnOs(LINUX)
+class FirefoxVersionTest extends VersionTestParent {
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         browserManager = WebDriverManager.firefoxdriver();
         specificVersions = new String[] { "0.8.0", "0.19.1" };
     }

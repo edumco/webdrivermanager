@@ -18,32 +18,32 @@ package io.github.bonigarcia.wdm.test.iexplorer;
 
 import static io.github.bonigarcia.wdm.WebDriverManager.iedriver;
 import static java.lang.invoke.MethodHandles.lookup;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.File;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 /**
  * Test with Internet Explorer browser.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 1.0.0
  */
-public class IExplorerTest {
+class IExplorerTest {
 
     final Logger log = getLogger(lookup().lookupClass());
 
     @Test
-    public void testIExplorerLatest() {
+    void testIExplorerLatest() {
         iedriver().win().setup();
         assertIEDriver();
     }
 
     @Test
-    public void testIExplorerVersion() {
+    void testIExplorerVersion() {
         iedriver().win().driverVersion("3.11").setup();
         assertIEDriver();
     }
@@ -51,7 +51,7 @@ public class IExplorerTest {
     private void assertIEDriver() {
         File driver = new File(iedriver().getDownloadedDriverPath());
         log.debug("Path for IEDriverServer {}", driver);
-        assertTrue(driver.exists());
+        assertThat(driver).exists();
     }
 
 }

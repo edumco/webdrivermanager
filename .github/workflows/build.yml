@@ -23,12 +23,19 @@ jobs:
         java-version: ${{ matrix.java }}
     - name: Start Xvfb
       run: Xvfb :99 &
+    - name: Install Edge on Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
+        sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/
+        sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main" > /etc/apt/sources.list.d/microsoft-edge-dev.list'
+        sudo rm microsoft.gpg
+        sudo apt update && sudo apt install microsoft-edge-beta
     - name: Run tests
       run: mvn -B test
       env:
         DISPLAY: :99
-        WDM_GITHUBTOKENNAME: ${{ secrets.WDM_GITHUBTOKENNAME }}
-        WDM_GITHUBTOKENSECRET: ${{ secrets.WDM_GITHUBTOKENSECRET }}
+        WDM_GITHUBTOKEN: ${{ secrets.WDM_GITHUBTOKEN }}
     - name: Upload analysis to SonarCloud
       if: success() && matrix.os == 'ubuntu-latest' && matrix.java == '11' && !contains(github.ref, 'pull')
       run: >
@@ -37,7 +44,7 @@ jobs:
         -Dsonar.organization=bonigarcia-github
         -Dsonar.projectKey=io.github.bonigarcia:webdrivermanager
       env:
-        GITHUB_TOKEN: ${{ secrets.WDM_GITHUBTOKENSECRET }}
+        GITHUB_TOKEN: ${{ secrets.WDM_GITHUBTOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     - name: Upload coverage to Codecov
       if: success() && matrix.os == 'ubuntu-latest' && matrix.java == '11' && !contains(github.ref, 'pull')

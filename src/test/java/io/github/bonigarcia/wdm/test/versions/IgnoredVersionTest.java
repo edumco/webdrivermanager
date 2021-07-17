@@ -16,20 +16,14 @@
  */
 package io.github.bonigarcia.wdm.test.versions;
 
-import static io.github.bonigarcia.wdm.WebDriverManager.chromedriver;
 import static java.lang.invoke.MethodHandles.lookup;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.slf4j.LoggerFactory.getLogger;
 
-import java.io.File;
-import java.util.Arrays;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -40,41 +34,37 @@ import io.github.bonigarcia.wdm.config.WebDriverManagerException;
  * 
  * @since 1.7.2
  */
-public class IgnoredVersionTest {
+class IgnoredVersionTest {
 
     final Logger log = getLogger(lookup().lookupClass());
 
-    @Before
-    @After
-    public void cleanCache() {
+    @BeforeEach
+    @AfterEach
+    void cleanCache() {
         WebDriverManager.chromedriver().clearDriverCache();
     }
 
-    @Test(expected = WebDriverManagerException.class)
-    public void ignoredVersionsChrome() {
+    @Test
+    void ignoredVersionsChrome() {
         String driverVersion = "81.0.4044.69";
         String[] ignoredVersions = { driverVersion };
-        WebDriverManager.chromedriver().driverVersion(driverVersion)
-                .ignoreDriverVersions(ignoredVersions).avoidFallback().setup();
-        File driver = new File(chromedriver().getDownloadedDriverPath());
-        log.debug("Using driver {} (ignoring {})", driver,
-                Arrays.toString(ignoredVersions));
 
-        for (String v : ignoredVersions) {
-            assertThat(driver.getName(), not(containsString(v)));
-        }
+        WebDriverManager manager = WebDriverManager.chromedriver()
+                .driverVersion(driverVersion)
+                .ignoreDriverVersions(ignoredVersions).avoidFallback();
+        assertThatThrownBy(manager::setup)
+                .isInstanceOf(WebDriverManagerException.class);
     }
 
     @Test
-    public void ignoredVersionsFirefox() {
+    void ignoredVersionsFirefox() {
         String[] ignoredVersions = { "0.27.0", "0.26.0" };
         WebDriverManager.firefoxdriver().ignoreDriverVersions(ignoredVersions)
                 .setup();
         String driverVersion = WebDriverManager.firefoxdriver()
                 .getDownloadedDriverVersion();
         log.debug("Resolved version {}", driverVersion);
-        assertThat(Arrays.asList(ignoredVersions),
-                not(contains(driverVersion)));
+        assertThat(ignoredVersions).doesNotContain(driverVersion);
     }
 
 }

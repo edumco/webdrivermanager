@@ -17,66 +17,47 @@
 package io.github.bonigarcia.wdm.test.server;
 
 import static java.lang.invoke.MethodHandles.lookup;
-import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.Collection;
+import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.Header;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import io.github.bonigarcia.wdm.config.Config;
+import io.github.bonigarcia.wdm.online.HttpClient;
 
 /**
  * Test using wdm server.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 3.0.0
  */
-@RunWith(Parameterized.class)
-public class ServerTest {
+class ServerTest {
 
     static final Logger log = getLogger(lookup().lookupClass());
 
-    public static final String EXT = IS_OS_WINDOWS ? ".exe" : "";
+    static final String EXT = IS_OS_WINDOWS ? ".exe" : "";
 
-    @Parameter(0)
-    public String path;
+    static String serverPort;
 
-    @Parameter(1)
-    public String driver;
-
-    public static String serverPort;
-
-    @Parameters(name = "{index}: {0}")
-    public static Collection<Object[]> data() {
-        return asList(new Object[][] { { "chromedriver", "chromedriver" + EXT },
-                { "firefoxdriver", "geckodriver" + EXT },
-                { "operadriver", "operadriver" + EXT },
-                { "phantomjs", "phantomjs" + EXT },
-                { "edgedriver", "msedgedriver.exe" },
-                { "iedriver", "IEDriverServer.exe" },
-                { "chromedriver?os=WIN", "chromedriver.exe" },
-                { "chromedriver?os=LINUX&chromeDriverVersion=2.41&forceCache=true",
-                        "chromedriver" } });
-    }
-
-    @BeforeClass
-    public static void startServer() throws IOException {
+    @BeforeAll
+    static void startServer() throws IOException {
         serverPort = getFreePort();
         log.debug("Test is starting WebDriverManager server at port {}",
                 serverPort);
@@ -84,37 +65,50 @@ public class ServerTest {
         WebDriverManager.main(new String[] { "server", serverPort });
     }
 
-    @Test
-    public void testServer() throws IOException {
+    @ParameterizedTest
+    @MethodSource("data")
+    void testServer(String path, String driver) throws IOException {
         String serverUrl = String.format("http://localhost:%s/%s", serverPort,
                 path);
-
-        int timeoutSeconds = 60;
-        OkHttpClient client = new OkHttpClient.Builder()
-                .connectTimeout(timeoutSeconds, SECONDS)
-                .readTimeout(timeoutSeconds, SECONDS)
-                .callTimeout(timeoutSeconds, SECONDS).build();
-
-        Request request = new Request.Builder().url(serverUrl).build();
+        HttpClient client = new HttpClient(new Config());
+        HttpGet createHttpGet = client.createHttpGet(new URL(serverUrl));
 
         // Assert response
-        Response response = client.newCall(request).execute();
-        assertTrue(response.isSuccessful());
+        log.debug("Request: GET {}", serverUrl);
+        CloseableHttpResponse response = client.execute(createHttpGet);
+        int responseCode = response.getCode();
+        log.debug("Response: {}", responseCode);
+
+        assertThat(responseCode).isEqualTo(200);
 
         // Assert attachment
         String attachment = String.format("attachment; filename=\"%s\"",
                 driver);
+        List<Header> headerList = Arrays.asList(response.getHeaders());
+        List<Header> collect = headerList.stream()
+                .filter(x -> x.toString().contains("Content-Disposition"))
+                .collect(toList());
 
-        List<String> headers = response.headers().values("Content-Disposition");
-        log.debug("Assessing {} ... {} should contain {}", driver, headers,
+        log.debug("Assessing {} ... headers should contain {}", driver,
                 attachment);
-        assertTrue(headers.contains(attachment));
+        assertThat(collect.get(0)).toString().contains(attachment);
     }
 
-    public static String getFreePort() throws IOException {
+    static String getFreePort() throws IOException {
         try (ServerSocket socket = new ServerSocket(0)) {
             return String.valueOf(socket.getLocalPort());
         }
+    }
+
+    static Stream<Arguments> data() {
+        return Stream.of(Arguments.of("chromedriver", "chromedriver" + EXT),
+                Arguments.of("firefoxdriver", "geckodriver" + EXT),
+                Arguments.of("operadriver", "operadriver" + EXT),
+                Arguments.of("edgedriver", "msedgedriver" + EXT),
+                Arguments.of("chromedriver?os=WIN", "chromedriver.exe"),
+                Arguments.of(
+                        "chromedriver?os=LINUX&chromeDriverVersion=2.41&forceCache=true",
+                        "chromedriver"));
     }
 
 }

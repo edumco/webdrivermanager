@@ -40,7 +40,7 @@ import io.github.bonigarcia.wdm.config.WebDriverManagerException;
 /**
  * Resolution cache.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 3.0.0
  */
 public class ResolutionCache {
@@ -48,7 +48,7 @@ public class ResolutionCache {
     final Logger log = getLogger(lookup().lookupClass());
 
     static final String TTL = "-ttl";
-    static final String RESOLUTION_CACHE_INFO = "WebDriverManager Resolution Cache (relationship between browsers and drivers versions previously resolved)";
+    static final String RESOLUTION_CACHE_INFO = "WebDriverManager Resolution Cache";
 
     Properties props = new Properties() {
         private static final long serialVersionUID = 3734950329657085291L;
@@ -175,6 +175,10 @@ public class ResolutionCache {
     }
 
     public boolean checkKeyInResolutionCache(String key) {
+        return checkKeyInResolutionCache(key, true);
+    }
+
+    public boolean checkKeyInResolutionCache(String key, boolean showLog) {
         String valueFromResolutionCache = getValueFromResolutionCache(key);
         boolean valueInResolutionCache = valueFromResolutionCache != null
                 && !valueFromResolutionCache.isEmpty();
@@ -184,8 +188,10 @@ public class ResolutionCache {
                     valueFromResolutionCache, expirationDate);
             if (valueInResolutionCache) {
                 String strDate = formatDate(expirationDate);
-                log.debug("Resolution {}={} in cache (valid until {})", key,
-                        valueFromResolutionCache, strDate);
+                if (showLog) {
+                    log.debug("Resolution {}={} in cache (valid until {})", key,
+                            valueFromResolutionCache, strDate);
+                }
             }
         }
         return valueInResolutionCache;

@@ -17,28 +17,29 @@
 package io.github.bonigarcia.wdm.test.cache;
 
 import static io.github.bonigarcia.wdm.WebDriverManager.chromedriver;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 
 /**
  * Test for resolution cache.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 3.0.0
  */
-public class ResolutionCacheTest {
+class ResolutionCacheTest {
 
     @Test
-    public void testEmptyTtl() {
+    void testEmptyTtl() {
         WebDriverManager.main(new String[] { "clear-resolution-cache" });
         chromedriver().ttl(0).ttlBrowsers(0).setup();
         File driver = new File(chromedriver().getDownloadedDriverPath());
-        assertTrue(driver.exists());
+
+        assertThat(driver).exists();
     }
 
 }

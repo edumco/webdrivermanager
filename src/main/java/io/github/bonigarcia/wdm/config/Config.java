@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -42,7 +43,7 @@ import org.slf4j.Logger;
 /**
  * Configuration class.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 2.2.0
  */
 public class Config {
@@ -78,6 +79,8 @@ public class Config {
             "wdm.avoidResolutionCache", Boolean.class);
     ConfigKey<Boolean> avoidReadReleaseFromRepository = new ConfigKey<>(
             "wdm.avoidReadReleaseFromRepository", Boolean.class);
+    ConfigKey<Boolean> avoidTmpFolder = new ConfigKey<>("wdm.avoidTmpFolder",
+            Boolean.class);
     ConfigKey<Integer> timeout = new ConfigKey<>("wdm.timeout", Integer.class);
     ConfigKey<Boolean> versionsPropertiesOnlineFirst = new ConfigKey<>(
             "wdm.versionsPropertiesOnlineFirst", Boolean.class);
@@ -103,14 +106,10 @@ public class Config {
             String.class);
     ConfigKey<String> ignoreVersions = new ConfigKey<>("wdm.ignoreVersions",
             String.class);
-    ConfigKey<String> gitHubTokenName = new ConfigKey<>("wdm.gitHubTokenName",
+    ConfigKey<String> gitHubToken = new ConfigKey<>("wdm.gitHubToken",
             String.class);
-    ConfigKey<String> gitHubTokenSecret = new ConfigKey<>(
-            "wdm.gitHubTokenSecret", String.class);
-    ConfigKey<String> localRepositoryUser = new ConfigKey<>(
-            "wdm.localRepositoryUser", String.class);
-    ConfigKey<String> localRepositoryPassword = new ConfigKey<>(
-            "wdm.localRepositoryPassword", String.class);
+    ConfigKey<String> defaultBrowser = new ConfigKey<>("wdm.defaultBrowser",
+            String.class);
 
     ConfigKey<String> chromeDriverVersion = new ConfigKey<>(
             "wdm.chromeDriverVersion", String.class);
@@ -165,15 +164,6 @@ public class Config {
     ConfigKey<URL> operaDriverMirrorUrl = new ConfigKey<>(
             "wdm.operaDriverMirrorUrl", URL.class);
 
-    ConfigKey<String> phantomjsDriverVersion = new ConfigKey<>(
-            "wdm.phantomjsDriverVersion", String.class);
-    ConfigKey<String> phantomjsDriverExport = new ConfigKey<>(
-            "wdm.phantomjsDriverExport", String.class);
-    ConfigKey<URL> phantomjsDriverUrl = new ConfigKey<>(
-            "wdm.phantomjsDriverUrl", URL.class);
-    ConfigKey<URL> phantomjsDriverMirrorUrl = new ConfigKey<>(
-            "wdm.phantomjsDriverMirrorUrl", URL.class);
-
     ConfigKey<String> chromiumDriverVersion = new ConfigKey<>(
             "wdm.chromiumDriverVersion", String.class);
     ConfigKey<String> chromiumVersion = new ConfigKey<>("wdm.chromiumVersion",
@@ -182,11 +172,6 @@ public class Config {
             "wdm.chromiumDriverSnapPath", String.class);
     ConfigKey<Boolean> useChromiumDriverSnap = new ConfigKey<>(
             "wdm.useChromiumDriverSnap", Boolean.class);
-
-    ConfigKey<String> seleniumServerStandaloneVersion = new ConfigKey<>(
-            "wdm.seleniumServerStandaloneVersion", String.class);
-    ConfigKey<URL> seleniumServerStandaloneUrl = new ConfigKey<>(
-            "wdm.seleniumServerStandaloneUrl", URL.class);
 
     ConfigKey<Integer> serverPort = new ConfigKey<>("wdm.serverPort",
             Integer.class);
@@ -197,9 +182,58 @@ public class Config {
             String.class);
     ConfigKey<String> browserVersionDetectionRegex = new ConfigKey<>(
             "wdm.browserVersionDetectionRegex", String.class);
-
     ConfigKey<String> browserVersionDetectionCommand = new ConfigKey<>(
             "wdm.browserVersionDetectionCommand", String.class);
+
+    ConfigKey<String> dockerHubUrl = new ConfigKey<>("wdm.dockerHubUrl",
+            String.class);
+    ConfigKey<String> dockerNetwork = new ConfigKey<>("wdm.dockerNetwork",
+            String.class);
+    ConfigKey<String> dockerTimezone = new ConfigKey<>("wdm.dockerTimezone",
+            String.class);
+    ConfigKey<String> dockerLang = new ConfigKey<>("wdm.dockerLang",
+            String.class);
+    ConfigKey<String> dockerTmpfsSize = new ConfigKey<>("wdm.dockerTmpfsSize",
+            String.class);
+    ConfigKey<Integer> dockerStopTimeoutSec = new ConfigKey<>(
+            "wdm.dockerStopTimeoutSec", Integer.class);
+    ConfigKey<Boolean> dockerEnableVnc = new ConfigKey<>("wdm.dockerEnableVnc",
+            Boolean.class);
+    ConfigKey<Boolean> dockerEnableRecording = new ConfigKey<>(
+            "wdm.dockerEnableRecording", Boolean.class);
+    ConfigKey<String> dockerScreenResolution = new ConfigKey<>(
+            "wdm.dockerScreenResolution", String.class);
+    ConfigKey<String> dockerVncPassword = new ConfigKey<>(
+            "wdm.dockerVncPassword", String.class);
+    ConfigKey<Integer> dockerBrowserPort = new ConfigKey<>(
+            "wdm.dockerBrowserPort", Integer.class);
+    ConfigKey<Integer> dockerVncPort = new ConfigKey<>("wdm.dockerVncPort",
+            Integer.class);
+    ConfigKey<Integer> dockerNoVncPort = new ConfigKey<>("wdm.dockerNoVncPort",
+            Integer.class);
+    ConfigKey<Integer> dockerRecordingFrameRate = new ConfigKey<>(
+            "wdm.dockerRecordingFrameRate", Integer.class);
+    ConfigKey<String> dockerRecordingScreenSize = new ConfigKey<>(
+            "wdm.dockerRecordingScreenSize", String.class);
+    ConfigKey<Path> dockerRecordingOutput = new ConfigKey<>(
+            "wdm.dockerRecordingOutput", Path.class);
+    ConfigKey<String> dockerBrowserSelenoidImageFormat = new ConfigKey<>(
+            "wdm.dockerBrowserSelenoidImageFormat", String.class);
+    ConfigKey<String> dockerBrowserTwilioImageFormat = new ConfigKey<>(
+            "wdm.dockerBrowserTwilioImageFormat", String.class);
+    ConfigKey<String> dockerBrowserAerokubeImageFormat = new ConfigKey<>(
+            "wdm.dockerBrowserAerokubeImageFormat", String.class);
+    ConfigKey<String> dockerBrowserMobileImageFormat = new ConfigKey<>(
+            "wdm.dockerBrowserMobileImageFormat", String.class);
+    ConfigKey<String> dockerRecordingImage = new ConfigKey<>(
+            "wdm.dockerRecordingImage", String.class);
+    ConfigKey<String> dockerNoVncImage = new ConfigKey<>("wdm.dockerNoVncImage",
+            String.class);
+    ConfigKey<String> dockerCustomImage = new ConfigKey<>(
+            "wdm.dockerCustomImage", String.class);
+
+    ConfigKey<String> remoteAddress = new ConfigKey<>("wdm.remoteAddress",
+            String.class);
 
     private <T> T resolve(ConfigKey<T> configKey) {
         String name = configKey.getName();
@@ -233,6 +267,8 @@ public class Config {
             output = (T) Integer.valueOf(strValue);
         } else if (type.equals(Boolean.class)) {
             output = (T) Boolean.valueOf(strValue);
+        } else if (type.equals(Path.class)) {
+            output = (T) Paths.get(strValue);
         } else if (type.equals(URL.class)) {
             try {
                 output = (T) new URL(strValue);
@@ -447,6 +483,15 @@ public class Config {
         return this;
     }
 
+    public boolean isAvoidTmpFolder() {
+        return resolve(avoidTmpFolder);
+    }
+
+    public Config setAvoidTmpFolder(boolean value) {
+        this.avoidTmpFolder.setValue(value);
+        return this;
+    }
+
     public int getTimeout() {
         return resolve(timeout);
     }
@@ -580,39 +625,21 @@ public class Config {
         return this;
     }
 
-    public String getGitHubTokenName() {
-        return resolve(gitHubTokenName);
+    public String getGitHubToken() {
+        return resolve(gitHubToken);
     }
 
-    public Config setGitHubTokenName(String value) {
-        this.gitHubTokenName.setValue(value);
+    public Config setGitHubToken(String value) {
+        this.gitHubToken.setValue(value);
         return this;
     }
 
-    public String getGitHubTokenSecret() {
-        return resolve(gitHubTokenSecret);
+    public String getDefaultBrowser() {
+        return resolve(defaultBrowser);
     }
 
-    public Config setGitHubTokenSecret(String value) {
-        this.gitHubTokenSecret.setValue(value);
-        return this;
-    }
-
-    public String getLocalRepositoryUser() {
-        return resolve(localRepositoryUser);
-    }
-
-    public Config setLocalRepositoryUser(String value) {
-        this.localRepositoryUser.setValue(value);
-        return this;
-    }
-
-    public String getLocalRepositoryPassword() {
-        return resolve(localRepositoryPassword);
-    }
-
-    public Config setLocalRepositoryPassword(String value) {
-        this.localRepositoryPassword.setValue(value);
+    public Config setDefaultBrowser(String value) {
+        this.defaultBrowser.setValue(value);
         return this;
     }
 
@@ -877,42 +904,6 @@ public class Config {
         return this;
     }
 
-    public String getPhantomjsDriverVersion() {
-        return resolve(phantomjsDriverVersion);
-    }
-
-    public Config setPhantomjsDriverVersion(String value) {
-        this.phantomjsDriverVersion.setValue(value);
-        return this;
-    }
-
-    public String getPhantomjsDriverExport() {
-        return resolve(phantomjsDriverExport);
-    }
-
-    public Config setPhantomjsDriverExport(String value) {
-        this.phantomjsDriverExport.setValue(value);
-        return this;
-    }
-
-    public URL getPhantomjsDriverUrl() {
-        return resolve(phantomjsDriverUrl);
-    }
-
-    public Config setPhantomjsDriverUrl(URL value) {
-        this.phantomjsDriverUrl.setValue(value);
-        return this;
-    }
-
-    public URL getPhantomjsDriverMirrorUrl() {
-        return resolve(phantomjsDriverMirrorUrl);
-    }
-
-    public Config setPhantomjsDriverMirrorUrl(URL value) {
-        this.phantomjsDriverMirrorUrl.setValue(value);
-        return this;
-    }
-
     public String getChromiumDriverVersion() {
         return resolve(chromiumDriverVersion);
     }
@@ -949,30 +940,228 @@ public class Config {
         return this;
     }
 
-    public String getSeleniumServerStandaloneVersion() {
-        return resolve(seleniumServerStandaloneVersion);
-    }
-
-    public Config setSeleniumServerStandaloneVersion(String value) {
-        this.seleniumServerStandaloneVersion.setValue(value);
-        return this;
-    }
-
-    public URL getSeleniumServerStandaloneUrl() {
-        return resolve(seleniumServerStandaloneUrl);
-    }
-
-    public Config setSeleniumServerStandaloneUrl(URL value) {
-        this.seleniumServerStandaloneUrl.setValue(value);
-        return this;
-    }
-
     public String getBrowserVersionDetectionCommand() {
         return resolve(browserVersionDetectionCommand);
     }
 
     public Config setBrowserVersionDetectionCommand(String value) {
         this.browserVersionDetectionCommand.setValue(value);
+        return this;
+    }
+
+    public String getDockerHubUrl() {
+        return resolve(dockerHubUrl);
+    }
+
+    public Config setDockerHubUrl(String value) {
+        this.dockerHubUrl.setValue(value);
+        return this;
+    }
+
+    public String getDockerNetwork() {
+        return resolve(dockerNetwork);
+    }
+
+    public Config setDockerNetwork(String value) {
+        this.dockerNetwork.setValue(value);
+        return this;
+    }
+
+    public String getDockerTimezone() {
+        return resolve(dockerTimezone);
+    }
+
+    public Config setDockerTimezone(String value) {
+        this.dockerTimezone.setValue(value);
+        return this;
+    }
+
+    public String getDockerLang() {
+        return resolve(dockerLang);
+    }
+
+    public Config setDockerLang(String value) {
+        this.dockerLang.setValue(value);
+        return this;
+    }
+
+    public String getDockerTmpfsSize() {
+        return resolve(dockerTmpfsSize);
+    }
+
+    public Config setDockerTmpfsSize(String value) {
+        this.dockerTmpfsSize.setValue(value);
+        return this;
+    }
+
+    public int getDockerStopTimeoutSec() {
+        return resolve(dockerStopTimeoutSec);
+    }
+
+    public Config setDockerStopTimeoutSec(int value) {
+        this.dockerStopTimeoutSec.setValue(value);
+        return this;
+    }
+
+    public boolean isEnabledDockerVnc() {
+        return resolve(dockerEnableVnc);
+    }
+
+    public Config setDockerEnableVnc(boolean value) {
+        this.dockerEnableVnc.setValue(value);
+        return this;
+    }
+
+    public boolean isEnabledDockerRecording() {
+        return resolve(dockerEnableRecording);
+    }
+
+    public Config setDockerEnableRecording(boolean value) {
+        this.dockerEnableRecording.setValue(value);
+        return this;
+    }
+
+    public String getDockerScreenResolution() {
+        return resolve(dockerScreenResolution);
+    }
+
+    public Config setDockerScreenResolution(String value) {
+        this.dockerScreenResolution.setValue(value);
+        return this;
+    }
+
+    public String getDockerVncPassword() {
+        return resolve(dockerVncPassword);
+    }
+
+    public Config setDockerVncPassword(String value) {
+        this.dockerVncPassword.setValue(value);
+        return this;
+    }
+
+    public int getDockerBrowserPort() {
+        return resolve(dockerBrowserPort);
+    }
+
+    public Config setDockerBrowserPort(int value) {
+        this.dockerBrowserPort.setValue(value);
+        return this;
+    }
+
+    public int getDockerVncPort() {
+        return resolve(dockerVncPort);
+    }
+
+    public Config setDockerVncPort(int value) {
+        this.dockerVncPort.setValue(value);
+        return this;
+    }
+
+    public int getDockerNoVncPort() {
+        return resolve(dockerNoVncPort);
+    }
+
+    public Config setDockerNoVncPort(int value) {
+        this.dockerNoVncPort.setValue(value);
+        return this;
+    }
+
+    public int getDockerRecordingFrameRate() {
+        return resolve(dockerRecordingFrameRate);
+    }
+
+    public Config setDockerRecordingFrameRate(int value) {
+        this.dockerRecordingFrameRate.setValue(value);
+        return this;
+    }
+
+    public String getDockerRecordingScreenSize() {
+        return resolve(dockerRecordingScreenSize);
+    }
+
+    public Config setDockerRecordingScreenSize(String value) {
+        this.dockerRecordingScreenSize.setValue(value);
+        return this;
+    }
+
+    public Path getDockerRecordingOutput() {
+        return resolve(dockerRecordingOutput);
+    }
+
+    public Config setDockerRecordingOutput(Path value) {
+        this.dockerRecordingOutput.setValue(value);
+        return this;
+    }
+
+    public String getDockerBrowserSelenoidImageFormat() {
+        return resolve(dockerBrowserSelenoidImageFormat);
+    }
+
+    public Config setDockerBrowserSelenoidImageFormat(String value) {
+        this.dockerBrowserSelenoidImageFormat.setValue(value);
+        return this;
+    }
+
+    public String getDockerBrowserTwilioImageFormat() {
+        return resolve(dockerBrowserTwilioImageFormat);
+    }
+
+    public Config setDockerBrowserTwilioImageFormat(String value) {
+        this.dockerBrowserTwilioImageFormat.setValue(value);
+        return this;
+    }
+
+    public String getDockerBrowserAerokubeImageFormat() {
+        return resolve(dockerBrowserAerokubeImageFormat);
+    }
+
+    public Config setDockerBrowserAerokubeImageFormat(String value) {
+        this.dockerBrowserAerokubeImageFormat.setValue(value);
+        return this;
+    }
+
+    public String getDockerBrowserMobileImageFormat() {
+        return resolve(dockerBrowserMobileImageFormat);
+    }
+
+    public Config setDockerBrowserMobileImageFormat(String value) {
+        this.dockerBrowserMobileImageFormat.setValue(value);
+        return this;
+    }
+
+    public String getDockerRecordingImage() {
+        return resolve(dockerRecordingImage);
+    }
+
+    public Config setDockerRecordingImage(String value) {
+        this.dockerRecordingImage.setValue(value);
+        return this;
+    }
+
+    public String getDockerNoVncImage() {
+        return resolve(dockerNoVncImage);
+    }
+
+    public Config setDockerNoVncImage(String value) {
+        this.dockerNoVncImage.setValue(value);
+        return this;
+    }
+
+    public String getDockerCustomImage() {
+        return resolve(dockerCustomImage);
+    }
+
+    public Config setDockerCustomImage(String value) {
+        this.dockerCustomImage.setValue(value);
+        return this;
+    }
+
+    public String getRemoteAddress() {
+        return resolve(remoteAddress);
+    }
+
+    public Config setRemoteAddress(String value) {
+        this.remoteAddress.setValue(value);
         return this;
     }
 

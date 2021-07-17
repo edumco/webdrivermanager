@@ -48,7 +48,7 @@ import io.github.bonigarcia.wdm.config.WebDriverManagerException;
 /**
  * Handler for URLs (filtering, version selection).
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 4.0.0
  */
 public class UrlHandler {
@@ -136,8 +136,7 @@ public class UrlHandler {
     }
 
     public void filterByOs(String driverName, String osName) {
-        if (!driverName.equalsIgnoreCase("IEDriverServer")
-                && !driverName.equalsIgnoreCase("selenium-server-standalone")) {
+        if (!driverName.equalsIgnoreCase("IEDriverServer")) {
             log.trace("URLs before filtering by OS ({}): {}", osName,
                     candidateUrls);
             candidateUrls = candidateUrls.stream().filter(url -> OperatingSystem
@@ -167,29 +166,6 @@ public class UrlHandler {
             log.trace(
                     "Empty URL list after filtering by architecture ... using last candidate: {}",
                     candidateUrls);
-        }
-    }
-
-    public void filterByDistro(String os, String driverName) {
-        try {
-            if (os.equalsIgnoreCase("linux")
-                    && driverName.contains("phantomjs")) {
-                String distro = getDistroName();
-                String versionToFilter = "2.5.0";
-                log.trace(
-                        "URLs before filtering by Linux distribution ({}): {}",
-                        distro, candidateUrls);
-                candidateUrls = candidateUrls.stream()
-                        .filter(url -> !url.getFile().contains(versionToFilter)
-                                || url.getFile().contains(distro))
-                        .collect(toList());
-                log.trace("URLs after filtering by Linux distribution ({}): {}",
-                        distro, candidateUrls);
-            }
-        } catch (Exception e) {
-            log.warn(
-                    "An exception happens when filtering by distro to resolve {}: {}",
-                    driverName, e.getMessage());
         }
     }
 

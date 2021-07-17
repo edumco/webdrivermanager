@@ -16,29 +16,58 @@
  */
 package io.github.bonigarcia.wdm.test.chrome;
 
-import org.junit.Before;
-import org.junit.BeforeClass;
+import static java.lang.invoke.MethodHandles.lookup;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.slf4j.LoggerFactory.getLogger;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.slf4j.Logger;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
-import io.github.bonigarcia.wdm.test.base.BrowserTestParent;
 
 /**
  * Test with Google Chrome browser.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 1.0.0
  */
-public class ChromeTest extends BrowserTestParent {
+class ChromeTest {
 
-    @BeforeClass
-    public static void setupClass() {
+    final Logger log = getLogger(lookup().lookupClass());
+
+    WebDriver driver;
+
+    @BeforeAll
+    static void setupClass() {
         WebDriverManager.chromedriver().setup();
     }
 
-    @Before
-    public void setupTest() {
+    @BeforeEach
+    void setupTest() {
         driver = new ChromeDriver();
+    }
+
+    @AfterEach
+    void teardown() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
+
+    @Test
+    void test() {
+        String sutUrl = "https://github.com/bonigarcia/webdrivermanager";
+        driver.get(sutUrl);
+        String title = driver.getTitle();
+        log.debug("The title of {} is {}", sutUrl, title);
+
+        assertThat(title)
+                .contains("Automated driver management for Selenium WebDriver");
     }
 
 }

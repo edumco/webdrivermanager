@@ -17,12 +17,10 @@
 package io.github.bonigarcia.wdm.test.edge;
 
 import static java.lang.invoke.MethodHandles.lookup;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.slf4j.LoggerFactory.getLogger;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -30,15 +28,15 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 /**
  * Test with ARM64 and Edge.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 4.4.2
  */
-public class EdgeArmTest {
+class EdgeArmTest {
 
     final Logger log = getLogger(lookup().lookupClass());
 
     @Test
-    public void testEdgeArm() {
+    void testEdgeArm() {
         WebDriverManager driverManager = WebDriverManager.edgedriver();
 
         // 1. Force downloading (empty cache)
@@ -58,7 +56,7 @@ public class EdgeArmTest {
         String driverPathArm64 = driverManager.win().getDownloadedDriverPath();
         log.debug("Driver path (ARM64) {}", driverPathArm64);
 
-        assertThat(driverPath, not(equalTo(driverPathArm64)));
+        assertThat(driverPath).isNotEqualTo(driverPathArm64);
     }
 
 }

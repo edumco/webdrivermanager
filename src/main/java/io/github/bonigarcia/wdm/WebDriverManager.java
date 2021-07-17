@@ -26,13 +26,13 @@ import static io.github.bonigarcia.wdm.config.DriverManagerType.EDGE;
 import static io.github.bonigarcia.wdm.config.DriverManagerType.FIREFOX;
 import static io.github.bonigarcia.wdm.config.DriverManagerType.IEXPLORER;
 import static io.github.bonigarcia.wdm.config.DriverManagerType.OPERA;
-import static io.github.bonigarcia.wdm.config.DriverManagerType.PHANTOMJS;
-import static io.github.bonigarcia.wdm.config.DriverManagerType.SELENIUM_SERVER_STANDALONE;
+import static io.github.bonigarcia.wdm.config.DriverManagerType.SAFARI;
 import static io.github.bonigarcia.wdm.config.OperatingSystem.LINUX;
 import static io.github.bonigarcia.wdm.config.OperatingSystem.MAC;
 import static io.github.bonigarcia.wdm.config.OperatingSystem.WIN;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.valueOf;
+import static java.lang.System.getenv;
 import static java.lang.invoke.MethodHandles.lookup;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.Collections.singletonList;
@@ -55,14 +55,19 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 
 import javax.xml.namespace.NamespaceContext;
@@ -71,12 +76,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.jsoup.Jsoup;
+import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.MutableCapabilities;
+import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -95,16 +102,16 @@ import io.github.bonigarcia.wdm.config.Config;
 import io.github.bonigarcia.wdm.config.DriverManagerType;
 import io.github.bonigarcia.wdm.config.OperatingSystem;
 import io.github.bonigarcia.wdm.config.WebDriverManagerException;
+import io.github.bonigarcia.wdm.docker.DockerContainer;
+import io.github.bonigarcia.wdm.docker.DockerService;
 import io.github.bonigarcia.wdm.managers.ChromeDriverManager;
 import io.github.bonigarcia.wdm.managers.ChromiumDriverManager;
 import io.github.bonigarcia.wdm.managers.EdgeDriverManager;
 import io.github.bonigarcia.wdm.managers.FirefoxDriverManager;
 import io.github.bonigarcia.wdm.managers.InternetExplorerDriverManager;
 import io.github.bonigarcia.wdm.managers.OperaDriverManager;
-import io.github.bonigarcia.wdm.managers.PhantomJsDriverManager;
-import io.github.bonigarcia.wdm.managers.SeleniumServerStandaloneManager;
+import io.github.bonigarcia.wdm.managers.SafariDriverManager;
 import io.github.bonigarcia.wdm.managers.VoidDriverManager;
-import io.github.bonigarcia.wdm.online.BitBucketApi;
 import io.github.bonigarcia.wdm.online.Downloader;
 import io.github.bonigarcia.wdm.online.GitHubApi;
 import io.github.bonigarcia.wdm.online.HttpClient;
@@ -112,11 +119,13 @@ import io.github.bonigarcia.wdm.online.S3NamespaceContext;
 import io.github.bonigarcia.wdm.online.UrlHandler;
 import io.github.bonigarcia.wdm.versions.VersionComparator;
 import io.github.bonigarcia.wdm.versions.VersionDetector;
+import io.github.bonigarcia.wdm.webdriver.WebDriverBrowser;
+import io.github.bonigarcia.wdm.webdriver.WebDriverCreator;
 
 /**
  * Parent driver manager.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 2.1.0
  */
 public abstract class WebDriverManager {
@@ -126,6 +135,7 @@ public abstract class WebDriverManager {
     protected static final String SLASH = "/";
     protected static final String LATEST_RELEASE = "LATEST_RELEASE";
     protected static final NamespaceContext S3_NAMESPACE_CONTEXT = new S3NamespaceContext();
+    protected static final String IN_DOCKER = "-in-docker";
 
     protected abstract List<URL> getDriverUrls() throws IOException;
 
@@ -152,18 +162,29 @@ public abstract class WebDriverManager {
 
     public abstract DriverManagerType getDriverManagerType();
 
+    protected Config config = new Config();
     protected HttpClient httpClient;
     protected Downloader downloader;
-    protected String downloadedDriverVersion;
-    protected String downloadedDriverPath;
+    protected ResolutionCache resolutionCache;
+    protected CacheHandler cacheHandler;
+    protected VersionDetector versionDetector;
+    protected WebDriverCreator webDriverCreator;
+    protected DockerService dockerService;
+
     protected boolean mirrorLog;
     protected boolean forcedArch;
     protected boolean forcedOs;
     protected int retryCount = 0;
-    protected Config config = new Config();
-    protected ResolutionCache resolutionCache;
-    protected CacheHandler cacheHandler;
-    protected VersionDetector versionDetector;
+    protected Capabilities capabilities;
+    protected boolean shutdownHook = false;
+    protected boolean dockerEnabled = false;
+    protected boolean androidEnabled = false;
+    protected List<WebDriverBrowser> webDriverList = new CopyOnWriteArrayList<>();
+
+    protected String downloadedDriverVersion;
+    protected String downloadedDriverPath;
+    protected String noVncUrl;
+    protected Path recordingPath;
 
     public static Config globalConfig() {
         Config global = new Config();
@@ -208,15 +229,9 @@ public abstract class WebDriverManager {
         return instanceMap.get(IEXPLORER);
     }
 
-    public static synchronized WebDriverManager phantomjs() {
-        instanceMap.putIfAbsent(PHANTOMJS, new PhantomJsDriverManager());
-        return instanceMap.get(PHANTOMJS);
-    }
-
-    public static synchronized WebDriverManager seleniumServerStandalone() {
-        instanceMap.putIfAbsent(SELENIUM_SERVER_STANDALONE,
-                new SeleniumServerStandaloneManager());
-        return instanceMap.get(SELENIUM_SERVER_STANDALONE);
+    public static synchronized WebDriverManager safaridriver() {
+        instanceMap.putIfAbsent(SAFARI, new SafariDriverManager());
+        return instanceMap.get(SAFARI);
     }
 
     protected static synchronized WebDriverManager voiddriver() {
@@ -225,36 +240,21 @@ public abstract class WebDriverManager {
 
     public static synchronized WebDriverManager getInstance(
             DriverManagerType driverManagerType) {
-        if (driverManagerType == null) {
-            return voiddriver();
-        }
-        switch (driverManagerType) {
-        case CHROME:
-            return chromedriver();
-        case CHROMIUM:
-            return chromiumdriver();
-        case FIREFOX:
-            return firefoxdriver();
-        case OPERA:
-            return operadriver();
-        case IEXPLORER:
-            return iedriver();
-        case EDGE:
-            return edgedriver();
-        case PHANTOMJS:
-            return phantomjs();
-        case SELENIUM_SERVER_STANDALONE:
-            return seleniumServerStandalone();
-        default:
-            return voiddriver();
-        }
+        return getInstance(driverManagerType.browserClass());
     }
 
     public static synchronized WebDriverManager getInstance(
             Class<?> webDriverClass) {
-        switch (webDriverClass.getName()) {
+        return getInstance(webDriverClass.getName());
+    }
+
+    public static synchronized WebDriverManager getInstance(
+            String webDriverClass) {
+        switch (webDriverClass) {
         case "org.openqa.selenium.chrome.ChromeDriver":
             return chromedriver();
+        case "org.openqa.selenium.chromium.ChromiumDriver":
+            return chromiumdriver();
         case "org.openqa.selenium.firefox.FirefoxDriver":
             return firefoxdriver();
         case "org.openqa.selenium.opera.OperaDriver":
@@ -263,34 +263,164 @@ public abstract class WebDriverManager {
             return iedriver();
         case "org.openqa.selenium.edge.EdgeDriver":
             return edgedriver();
-        case "org.openqa.selenium.phantomjs.PhantomJSDriver":
-            return phantomjs();
         default:
             return voiddriver();
         }
+    }
+
+    public static synchronized WebDriverManager getInstance() {
+        WebDriverManager manager = voiddriver();
+        String defaultBrowser = manager.config().getDefaultBrowser();
+        try {
+            if (defaultBrowser.contains(IN_DOCKER)) {
+                defaultBrowser = defaultBrowser.substring(0,
+                        defaultBrowser.indexOf(IN_DOCKER));
+                manager = getInstance(DriverManagerType
+                        .valueOf(defaultBrowser.toUpperCase(ROOT)));
+                manager.dockerEnabled = true;
+
+            } else {
+                manager = getInstance(DriverManagerType
+                        .valueOf(defaultBrowser.toUpperCase(ROOT)));
+            }
+            DriverManagerType managerType = DriverManagerType
+                    .valueOf(defaultBrowser.toUpperCase(ROOT));
+            return getInstance(managerType);
+
+        } catch (Exception e) {
+            log.error("Error trying to get manager for browser {}",
+                    defaultBrowser, e);
+        }
+        return manager;
     }
 
     public synchronized void setup() {
         DriverManagerType driverManagerType = getDriverManagerType();
         initResolutionCache();
         cacheHandler = new CacheHandler(config);
+        httpClient = new HttpClient(config());
+        dockerService = new DockerService(config, httpClient, resolutionCache);
 
+        if (config().getClearingDriverCache()) {
+            clearDriverCache();
+        }
+        if (config().getClearingResolutionCache()) {
+            clearResolutionCache();
+        }
+        if (dockerEnabled || !isNullOrEmpty(config().getRemoteAddress())) {
+            return;
+        }
         if (driverManagerType != null) {
             try {
-                if (config().getClearingDriverCache()) {
-                    clearDriverCache();
-                }
-                if (config().getClearingResolutionCache()) {
-                    clearResolutionCache();
-                }
-                String driverVersion = getDriverVersion();
-                manage(driverVersion);
+                manage(getDriverVersion());
             } finally {
-                if (!config().isAvoidAutoReset()) {
-                    reset();
-                }
+                reset();
             }
         }
+    }
+
+    public WebDriver create() {
+        WebDriver driver = null;
+        try {
+            setup();
+            driver = instantiateDriver();
+        } finally {
+            reset();
+        }
+        return driver;
+    }
+
+    public List<WebDriver> create(int numberOfBrowser) {
+        List<WebDriver> browserList = new ArrayList<>();
+        try {
+            for (int i = 0; i < numberOfBrowser; i++) {
+                if (i == 0) {
+                    setup();
+                }
+                browserList.add(instantiateDriver());
+            }
+        } finally {
+            reset();
+        }
+        return browserList;
+    }
+
+    public synchronized void quit() {
+        for (WebDriverBrowser driverBrowser : webDriverList) {
+            try {
+                WebDriver driver = driverBrowser.getDriver();
+                if (driver != null) {
+                    driver.quit();
+                }
+
+                if (dockerService != null) {
+                    List<DockerContainer> dockerContainerList = driverBrowser
+                            .getDockerContainerList();
+                    dockerContainerList.stream()
+                            .forEach(dockerService::stopAndRemoveContainer);
+                }
+            } catch (Exception e) {
+                log.warn("Exception closing {} ({})", driverBrowser.getDriver(),
+                        e.getMessage());
+            }
+        }
+        webDriverList.clear();
+        noVncUrl = "";
+        recordingPath = null;
+    }
+
+    public Optional<Path> getBrowserPath() {
+        if (versionDetector == null) {
+            httpClient = new HttpClient(config());
+            versionDetector = new VersionDetector(config, httpClient);
+        }
+        return versionDetector.getBrowserPath(
+                getDriverManagerType().getBrowserNameLowerCase());
+    }
+
+    public WebDriverManager browserInDocker() {
+        this.dockerEnabled = true;
+        return instanceMap.get(getDriverManagerType());
+    }
+
+    public WebDriverManager browserInDockerAndroid() {
+        throw new WebDriverManagerException(
+                getDriverManagerType().getBrowserName()
+                        + " is not available in Docker Android");
+    }
+
+    public WebDriverManager enableVnc() {
+        config().setDockerEnableVnc(true);
+        return instanceMap.get(getDriverManagerType());
+    }
+
+    public WebDriverManager enableRecording() {
+        config().setDockerEnableRecording(true);
+        return instanceMap.get(getDriverManagerType());
+    }
+
+    public WebDriverManager recordingOutput(String path) {
+        return recordingOutput(Paths.get(path));
+    }
+
+    public WebDriverManager recordingOutput(Path path) {
+        config().setDockerRecordingOutput(path);
+        return instanceMap.get(getDriverManagerType());
+    }
+
+    public WebDriverManager withCapabilities(Capabilities options) {
+        this.capabilities = options;
+        return instanceMap.get(getDriverManagerType());
+    }
+
+    public WebDriverManager withRemoteAddress(String remoteAddress) {
+        config().setRemoteAddress(remoteAddress);
+        return instanceMap.get(getDriverManagerType());
+    }
+
+    public WebDriverManager withDockerImage(String dockerImage) {
+        config().setDockerCustomImage(dockerImage);
+        return instanceMap.get(getDriverManagerType());
     }
 
     public WebDriverManager driverVersion(String driverVersion) {
@@ -389,24 +519,8 @@ public abstract class WebDriverManager {
         return instanceMap.get(getDriverManagerType());
     }
 
-    public WebDriverManager gitHubTokenSecret(String gitHubTokenSecret) {
-        config().setGitHubTokenSecret(gitHubTokenSecret);
-        return instanceMap.get(getDriverManagerType());
-    }
-
-    public WebDriverManager gitHubTokenName(String gitHubTokenName) {
-        config().setGitHubTokenName(gitHubTokenName);
-        return instanceMap.get(getDriverManagerType());
-    }
-
-    public WebDriverManager localRepositoryUser(String localRepositoryUser) {
-        config().setLocalRepositoryUser(localRepositoryUser);
-        return instanceMap.get(getDriverManagerType());
-    }
-
-    public WebDriverManager localRepositoryPassword(
-            String localRepositoryPassword) {
-        config().setLocalRepositoryPassword(localRepositoryPassword);
+    public WebDriverManager gitHubToken(String gitHubToken) {
+        config().setGitHubToken(gitHubToken);
         return instanceMap.get(getDriverManagerType());
     }
 
@@ -457,6 +571,16 @@ public abstract class WebDriverManager {
 
     public WebDriverManager avoidReadReleaseFromRepository() {
         config().setAvoidReadReleaseFromRepository(true);
+        return instanceMap.get(getDriverManagerType());
+    }
+
+    public WebDriverManager avoidTmpFolder() {
+        config().setAvoidTmpFolder(true);
+        return instanceMap.get(getDriverManagerType());
+    }
+
+    public WebDriverManager avoidUseChromiumDriverSnap() {
+        config().setUseChromiumDriverSnap(false);
         return instanceMap.get(getDriverManagerType());
     }
 
@@ -552,10 +676,22 @@ public abstract class WebDriverManager {
         }
     }
 
+    public URL getDockerNoVncUrl() {
+        try {
+            return new URL(noVncUrl);
+        } catch (MalformedURLException e) {
+            log.error("URL for Docker session not available", e);
+            return null;
+        }
+    }
+
+    public Path getDockerRecordingPath() {
+        return recordingPath;
+    }
+
     // ------------
 
     protected void manage(String driverVersion) {
-        httpClient = new HttpClient(config());
         try (HttpClient wdmHttpClient = httpClient) {
             versionDetector = new VersionDetector(config, httpClient);
             downloader = new Downloader(httpClient, config(),
@@ -729,7 +865,7 @@ public abstract class WebDriverManager {
 
     protected Optional<String> getBrowserVersionFromTheShell() {
         return versionDetector.getBrowserVersionFromTheShell(
-                getDriverManagerType().getBrowserName().toLowerCase());
+                getDriverManagerType().getBrowserNameLowerCase());
     }
 
     protected Optional<String> detectBrowserVersion() {
@@ -737,8 +873,8 @@ public abstract class WebDriverManager {
             return empty();
         }
 
-        String driverManagerTypeLowerCase = getDriverManagerType().name()
-                .toLowerCase(ROOT);
+        String driverManagerTypeLowerCase = getDriverManagerType()
+                .getNameLowerCase();
         Optional<String> optionalBrowserVersion;
 
         if (useResolutionCacheWithKey(driverManagerTypeLowerCase)) {
@@ -759,8 +895,7 @@ public abstract class WebDriverManager {
     }
 
     protected boolean useResolutionCache() {
-        return !config().isAvoidingResolutionCache()
-                && !config().isForceDownload();
+        return !config().isAvoidingResolutionCache();
     }
 
     protected boolean isUnknown(String driverVersion) {
@@ -865,7 +1000,6 @@ public abstract class WebDriverManager {
 
             // Rest of filters
             urlHandler.filterByArch(architecture, forcedArch);
-            urlHandler.filterByDistro(os, getDriverName());
             urlHandler.filterByIgnoredVersions(config().getIgnoreVersions());
             urlHandler.filterByBeta(config().isUseBetaVersions());
 
@@ -975,14 +1109,12 @@ public abstract class WebDriverManager {
             throws IOException {
         HttpGet get = httpClient.createHttpGet(driverUrl);
 
-        String gitHubTokenName = config().getGitHubTokenName();
-        String gitHubTokenSecret = config().getGitHubTokenSecret();
-        if (!isNullOrEmpty(gitHubTokenName)
-                && !isNullOrEmpty(gitHubTokenSecret)) {
-            String userpass = gitHubTokenName + ":" + gitHubTokenSecret;
-            String basicAuth = "Basic "
-                    + new String(new Base64().encode(userpass.getBytes()));
-            get.addHeader("Authorization", basicAuth);
+        String gitHubToken = config().getGitHubToken();
+        if (isNullOrEmpty(gitHubToken)) {
+            gitHubToken = getenv("GITHUB_TOKEN");
+        }
+        if (!isNullOrEmpty(gitHubToken)) {
+            get.addHeader("Authorization", "token " + gitHubToken);
         }
 
         return httpClient.execute(get).getEntity().getContent();
@@ -1022,31 +1154,6 @@ public abstract class WebDriverManager {
         return urls;
     }
 
-    protected List<URL> getDriversFromBitBucket() throws IOException {
-        List<URL> urls;
-        URL driverUrl = getDriverUrl();
-        logSeekRepo(driverUrl);
-
-        Optional<URL> mirrorUrl = getMirrorUrl();
-        if (mirrorUrl.isPresent() && config.isUseMirror()) {
-            urls = getDriversFromMirror(mirrorUrl.get());
-
-        } else {
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(httpClient
-                            .execute(httpClient.createHttpGet(driverUrl))
-                            .getEntity().getContent()))) {
-                GsonBuilder gsonBuilder = new GsonBuilder();
-                Gson gson = gsonBuilder.create();
-                BitBucketApi bitBucketInfo = gson.fromJson(reader,
-                        BitBucketApi.class);
-
-                urls = bitBucketInfo.getUrls();
-            }
-        }
-        return urls;
-    }
-
     protected HttpClient getHttpClient() {
         return httpClient;
     }
@@ -1077,22 +1184,17 @@ public abstract class WebDriverManager {
     }
 
     protected void reset() {
-        config().reset();
-        mirrorLog = false;
-        forcedArch = false;
-        forcedOs = false;
-        retryCount = 0;
-    }
-
-    protected String getProgramFilesEnv() {
-        return System.getProperty("os.arch").contains("64") ? "PROGRAMFILES"
-                : "PROGRAMFILES(X86)";
-    }
-
-    protected String getOtherProgramFilesEnv() {
-        return System.getProperty("os.arch").contains("64")
-                ? "PROGRAMFILES(X86)"
-                : "PROGRAMFILES";
+        if (!config().isAvoidAutoReset()) {
+            config().reset();
+            mirrorLog = false;
+            forcedArch = false;
+            forcedOs = false;
+            retryCount = 0;
+            shutdownHook = false;
+            dockerEnabled = false;
+            androidEnabled = false;
+            capabilities = null;
+        }
     }
 
     protected URL getDriverUrlCkeckingMirror(URL url) {
@@ -1112,9 +1214,8 @@ public abstract class WebDriverManager {
                     .valueOf(arg.toUpperCase(ROOT));
             WebDriverManager wdm = WebDriverManager
                     .getInstance(driverManagerType).avoidExport().cachePath(".")
-                    .forceDownload();
-            if (arg.equalsIgnoreCase("edge")
-                    || arg.equalsIgnoreCase("iexplorer")) {
+                    .forceDownload().avoidResolutionCache();
+            if (arg.equalsIgnoreCase("iexplorer")) {
                 wdm.operatingSystem(WIN);
             }
             wdm.avoidOutputTree().setup();
@@ -1160,7 +1261,7 @@ public abstract class WebDriverManager {
     }
 
     protected String getKeyForResolutionCache() {
-        return getDriverManagerType().name().toLowerCase(ROOT);
+        return getDriverManagerType().getNameLowerCase();
     }
 
     protected String getDriverVersionLabel(String driverVersion) {
@@ -1171,8 +1272,148 @@ public abstract class WebDriverManager {
         return empty();
     }
 
+    protected WebDriver instantiateDriver() {
+        WebDriver driver = null;
+        if (webDriverCreator == null) {
+            webDriverCreator = new WebDriverCreator(config);
+        }
+        try {
+            String remoteAddress = config().getRemoteAddress();
+            if (dockerEnabled) {
+                driver = createDockerWebDriver();
+            } else if (!isNullOrEmpty(remoteAddress)) {
+                Capabilities caps = Optional.ofNullable(capabilities)
+                        .orElse(getCapabilities());
+                driver = webDriverCreator.createRemoteWebDriver(remoteAddress,
+                        caps);
+
+            } else {
+                driver = createLocalWebDriver();
+            }
+
+        } catch (Exception e) {
+            log.error("There was an error creating WebDriver object for {}",
+                    getDriverManagerType().getBrowserName(), e);
+        }
+        addShutdownHook();
+
+        return driver;
+    }
+
+    protected void addShutdownHook() {
+        if (!shutdownHook) {
+            Runtime.getRuntime()
+                    .addShutdownHook(new Thread("wdm-shutdown-hook") {
+                        @Override
+                        public void run() {
+                            try {
+                                quit();
+                            } catch (Exception e) {
+                                log.warn("Exception in wdm-shutdown-hook ({})",
+                                        e.getMessage());
+                            }
+                        }
+                    });
+            shutdownHook = true;
+        }
+    }
+
+    protected WebDriver createDockerWebDriver() {
+        String browserName = getKeyForResolutionCache();
+        if (androidEnabled) {
+            browserName += "-mobile";
+        }
+        String browserVersion = getBrowserVersion();
+        String browserCacheKey = browserName + "-container-";
+
+        String dockerCustomImage = config().getDockerCustomImage();
+        String browserImage;
+        if (!isNullOrEmpty(dockerCustomImage)) {
+            browserImage = dockerCustomImage;
+            browserVersion = dockerService.getVersionFromImage(browserImage);
+            browserCacheKey += "custom";
+
+        } else {
+            if (isUnknown(browserVersion) || dockerService
+                    .isBrowserVersionLatesMinus(browserVersion)) {
+                browserCacheKey += isNullOrEmpty(browserVersion) ? "latest"
+                        : browserVersion;
+                browserVersion = dockerService.getImageVersionFromDockerHub(
+                        getDriverManagerType(), browserCacheKey, browserName,
+                        browserVersion, androidEnabled);
+            } else {
+                if (!dockerService.isBrowserVersionWildCard(browserVersion)
+                        && !browserVersion.contains(".")) {
+                    browserVersion += ".0";
+                }
+                browserCacheKey += browserVersion;
+            }
+            browserImage = dockerService.getDockerImage(browserName,
+                    browserVersion, androidEnabled);
+        }
+
+        DockerContainer browserContainer = dockerService.startBrowserContainer(
+                browserImage, browserCacheKey, browserVersion, androidEnabled);
+        browserContainer.setBrowserName(browserName);
+        String containerUrl = browserContainer.getContainerUrl();
+
+        WebDriverBrowser driverBrowser = new WebDriverBrowser();
+        driverBrowser.addDockerContainer(browserContainer);
+        webDriverList.add(driverBrowser);
+
+        WebDriver driver = webDriverCreator.createRemoteWebDriver(containerUrl,
+                getCapabilities());
+        driverBrowser.setDriver(driver);
+        String sessionId = webDriverCreator
+                .getSessionId(driverBrowser.getDriver());
+        browserContainer.setSessionId(sessionId);
+
+        if (config.isEnabledDockerVnc()) {
+            String noVncImage = config.getDockerNoVncImage();
+            String noVncVersion = dockerService.getVersionFromImage(noVncImage);
+            DockerContainer noVncContainer = dockerService.startNoVncContainer(
+                    noVncImage, "novnc-container", noVncVersion,
+                    browserContainer);
+            driverBrowser.addDockerContainer(noVncContainer);
+            noVncUrl = noVncContainer.getContainerUrl();
+
+            log.info("Docker session noVNC URL: {}", noVncUrl);
+        }
+
+        if (config.isEnabledDockerRecording()) {
+            String recorderImage = config.getDockerRecordingImage();
+            String recorderVersion = dockerService
+                    .getVersionFromImage(recorderImage);
+            DockerContainer recorderContainer = dockerService
+                    .startRecorderContainer(recorderImage, "recorder-container",
+                            recorderVersion, browserContainer);
+            driverBrowser.addDockerContainer(recorderContainer, 0);
+            recordingPath = recorderContainer.getRecordingPath();
+
+            log.info("Starting recording {}", recordingPath);
+        }
+
+        return driverBrowser.getDriver();
+    }
+
+    protected WebDriver createLocalWebDriver() throws ClassNotFoundException,
+            InstantiationException, IllegalAccessException,
+            InvocationTargetException, NoSuchMethodException {
+        Class<?> browserClass = Class
+                .forName(getDriverManagerType().browserClass());
+        WebDriver driver = webDriverCreator.createLocalWebDriver(browserClass,
+                capabilities);
+        webDriverList.add(new WebDriverBrowser(driver));
+
+        return driver;
+    }
+
+    protected Capabilities getCapabilities() {
+        return new MutableCapabilities();
+    }
+
     public static void main(String[] args) {
-        String validBrowsers = "chrome|chromium|firefox|opera|edge|phantomjs|iexplorer|selenium_server_standalone";
+        String validBrowsers = "chrome|chromium|firefox|opera|edge|iexplorer";
         if (args.length <= 0) {
             logCliError(validBrowsers);
         } else {

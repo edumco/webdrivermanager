@@ -17,13 +17,14 @@
 package io.github.bonigarcia.wdm.test.mirror;
 
 import static io.github.bonigarcia.wdm.WebDriverManager.chromedriver;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.File;
 import java.net.URL;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 import io.github.bonigarcia.wdm.config.WebDriverManagerException;
@@ -31,42 +32,41 @@ import io.github.bonigarcia.wdm.config.WebDriverManagerException;
 /**
  * Test for taobao.org mirror.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 1.6.1
  */
 
-public class TaobaoTest {
+class TaobaoTest {
 
-    @Ignore("Flaky test due to slow response of npm.taobao.org")
+    @Disabled("Flaky test due to slow response of npm.taobao.org")
     @Test
-    public void testTaobao() throws Exception {
+    void testTaobao() throws Exception {
         chromedriver().config().setAvoidBrowserDetection(true)
                 .setChromeDriverMirrorUrl(
                         new URL("http://npm.taobao.org/mirrors/chromedriver/"));
         chromedriver().useMirror().forceDownload().setup();
 
         File driver = new File(chromedriver().getDownloadedDriverPath());
-        assertTrue(driver.exists());
+        assertThat(driver).exists();
     }
 
-    @Ignore("Flaky test due to cnpmjs.org")
+    @Disabled("Flaky test due to cnpmjs.org")
     @Test
-    public void testOtherMirrorUrl() throws Exception {
+    void testOtherMirrorUrl() throws Exception {
         chromedriver().config().setAvoidBrowserDetection(true)
                 .setChromeDriverMirrorUrl(
                         new URL("https://cnpmjs.org/mirrors/chromedriver/"));
         chromedriver().useMirror().forceDownload().setup();
 
         File driver = new File(chromedriver().getDownloadedDriverPath());
-        assertTrue(driver.exists());
+        assertThat(driver).exists();
     }
 
-    @Test(expected = WebDriverManagerException.class)
-    public void testTaobaoException() {
-        WebDriverManager.edgedriver().useMirror().setup();
-        File driver = new File(
-                WebDriverManager.edgedriver().getDownloadedDriverPath());
-        assertTrue(driver.exists());
+    @Test
+    void testTaobaoException() {
+        WebDriverManager manager = WebDriverManager.edgedriver();
+        assertThatThrownBy(manager::useMirror)
+                .isInstanceOf(WebDriverManagerException.class);
     }
 
 }

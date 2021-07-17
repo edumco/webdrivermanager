@@ -18,34 +18,33 @@ package io.github.bonigarcia.wdm.test.forced;
 
 import static io.github.bonigarcia.wdm.WebDriverManager.firefoxdriver;
 import static java.lang.invoke.MethodHandles.lookup;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.slf4j.LoggerFactory.getLogger;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 /**
  * Force download test.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 3.3.0
  */
-public class ForceError403Test {
+class ForceError403Test {
 
     final Logger log = getLogger(lookup().lookupClass());
 
     static final int NUM = 40;
 
-    @Ignore
+    @Disabled
     @Test
-    public void test403() {
+    void test403() {
         for (int i = 0; i < NUM; i++) {
             log.debug("Forcing 403 error {}/{}", i + 1, NUM);
             firefoxdriver().avoidBrowserDetection().avoidResolutionCache()
                     .setup();
-            assertThat(firefoxdriver().getDownloadedDriverPath(), notNullValue());
+            assertThat(firefoxdriver().getDownloadedDriverPath()).isNotNull();
         }
     }
 

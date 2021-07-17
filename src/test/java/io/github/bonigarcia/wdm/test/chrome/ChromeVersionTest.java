@@ -16,7 +16,7 @@
  */
 package io.github.bonigarcia.wdm.test.chrome;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 import io.github.bonigarcia.wdm.test.base.VersionTestParent;
@@ -24,13 +24,13 @@ import io.github.bonigarcia.wdm.test.base.VersionTestParent;
 /**
  * Test asserting chromedriver versions.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 1.2.1
  */
-public class ChromeVersionTest extends VersionTestParent {
+class ChromeVersionTest extends VersionTestParent {
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         browserManager = WebDriverManager.chromedriver();
         specificVersions = new String[] { "2.10", "2.33" };
     }

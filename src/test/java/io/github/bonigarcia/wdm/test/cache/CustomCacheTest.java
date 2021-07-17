@@ -18,16 +18,15 @@ package io.github.bonigarcia.wdm.test.cache;
 
 import static java.lang.invoke.MethodHandles.lookup;
 import static java.nio.file.Files.createTempDirectory;
-import static org.hamcrest.CoreMatchers.startsWith;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -36,62 +35,63 @@ import io.github.bonigarcia.wdm.config.Config;
 /**
  * Test for custom target.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 1.7.2
  */
-public class CustomCacheTest {
+class CustomCacheTest {
 
     final Logger log = getLogger(lookup().lookupClass());
 
     Config globalConfig;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         globalConfig = WebDriverManager.globalConfig();
     }
 
     @Test
-    public void testCachePath() throws IOException {
+    void testCachePath() throws IOException {
         Path tmpFolder = createTempDirectory("").toRealPath();
         globalConfig.setCachePath(tmpFolder.toString());
         log.info("Using temporary folder {} as cache", tmpFolder);
         WebDriverManager.chromedriver().forceDownload().setup();
-        String driverPath = WebDriverManager.chromedriver().getDownloadedDriverPath();
+        String driverPath = WebDriverManager.chromedriver()
+                .getDownloadedDriverPath();
         log.info("Driver path {}", driverPath);
-        assertThat(driverPath, startsWith(tmpFolder.toString()));
+        assertThat(driverPath).startsWith(tmpFolder.toString());
         log.info("Deleting temporary folder {}", tmpFolder);
         WebDriverManager.chromedriver().clearDriverCache();
     }
 
     @Test
-    public void testCachePathContainsTilde() {
+    void testCachePathContainsTilde() {
         String customPath = "C:\\user\\abcdef~1\\path";
         globalConfig.setCachePath(customPath);
         String cachePath = globalConfig.getCachePath();
         log.info("Using {} got {}", customPath, cachePath);
-        assertThat(cachePath, startsWith(customPath));
+        assertThat(cachePath).startsWith(customPath);
     }
 
     @Test
-    public void testCachePathStartsWithTildeSlash() {
+    void testCachePathStartsWithTildeSlash() {
         String customPath = "~/webdrivers";
         globalConfig.setCachePath(customPath);
         String cachePath = globalConfig.getCachePath();
         log.info("Using {} got {}", customPath, cachePath);
-        assertThat(cachePath, startsWith(System.getProperty("user.home")));
+        assertThat(cachePath).startsWith(System.getProperty("user.home"));
     }
 
     @Test
-    public void testCachePathStartsWithTilde() {
+    void testCachePathStartsWithTilde() {
         String customPath = "~webdrivers";
         globalConfig.setCachePath(customPath);
         String cachePath = globalConfig.getCachePath();
         log.info("Using {} got {}", customPath, cachePath);
-        assertThat(cachePath, startsWith(customPath));
+        assertThat(cachePath).startsWith(customPath);
     }
 
-    @After
-    public void teardown() throws IOException {
+    @AfterEach
+    void teardown() throws IOException {
         globalConfig.reset();
     }
 }

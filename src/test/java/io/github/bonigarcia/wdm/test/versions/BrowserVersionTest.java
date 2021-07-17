@@ -17,14 +17,14 @@
 package io.github.bonigarcia.wdm.test.versions;
 
 import static java.lang.invoke.MethodHandles.lookup;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.File;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -32,28 +32,28 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 /**
  * Test using major versions of browsers.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 4.0.0
  */
-public class BrowserVersionTest {
+class BrowserVersionTest {
 
     final Logger log = getLogger(lookup().lookupClass());
 
-    @BeforeClass
-    @AfterClass
-    public static void cleanCache() {
+    @BeforeAll
+    @AfterAll
+    static void cleanCache() {
         WebDriverManager.chromedriver().clearResolutionCache();
     }
 
     @Test
-    public void testChromeVersion() {
+    void testChromeVersion() {
         WebDriverManager driverManager = WebDriverManager.chromedriver();
         driverManager.browserVersion("81").setup();
         assertDriver(driverManager);
     }
 
     @Test
-    public void testFirefoxVersion() {
+    void testFirefoxVersion() {
         WebDriverManager driverManager = WebDriverManager.firefoxdriver();
         driverManager.browserVersion("75").setup();
         assertDriver(driverManager);
@@ -62,7 +62,7 @@ public class BrowserVersionTest {
     private void assertDriver(WebDriverManager driverManager) {
         File driver = new File(driverManager.getDownloadedDriverPath());
         log.debug("Driver path {}", driver);
-        assertTrue(driver.exists());
+        assertThat(driver).exists();
     }
 
 }

@@ -17,20 +17,12 @@
 package io.github.bonigarcia.wdm.test.versions;
 
 import static java.lang.invoke.MethodHandles.lookup;
-import static java.util.Arrays.asList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNot.not;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.slf4j.LoggerFactory.getLogger;
 
-import java.util.Collection;
-
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.edge.EdgeDriver;
@@ -41,26 +33,17 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 /**
  * Test latest version of edgedriver.
  *
- * @author Boni Garcia (boni.gg@gmail.com)
+ * @author Boni Garcia
  * @since 3.6.0
  */
-@RunWith(Parameterized.class)
-@Ignore
-public class LatestAndBetaTest {
+@Disabled
+class LatestAndBetaTest {
 
     final Logger log = getLogger(lookup().lookupClass());
 
-    @Parameter
-    public Class<? extends WebDriver> driverClass;
-
-    @Parameters(name = "{index}: {0}")
-    public static Collection<Object[]> data() {
-        return asList(new Object[][] { { ChromeDriver.class },
-                { EdgeDriver.class } });
-    }
-
-    @Test
-    public void testLatestAndBetaedgedriver() {
+    @ParameterizedTest
+    @ValueSource(classes = { ChromeDriver.class, EdgeDriver.class })
+    void testLatestAndBetaedgedriver(Class<? extends WebDriver> driverClass) {
         WebDriverManager.getInstance(driverClass).avoidResolutionCache()
                 .avoidBrowserDetection().win().setup();
         String edgedriverStable = WebDriverManager.getInstance(driverClass)
@@ -73,7 +56,7 @@ public class LatestAndBetaTest {
                 .getDownloadedDriverVersion();
         log.debug("edgedriver BETA version: {}", edgedriverBeta);
 
-        assertThat(edgedriverStable, not(equalTo(edgedriverBeta)));
+        assertThat(edgedriverStable).isNotEqualTo(edgedriverBeta);
     }
 
 }
